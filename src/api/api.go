@@ -12,14 +12,17 @@ import (
 )
 
 type (
-	Api struct {
+	// API structure represetns and handles api interaction
+	API struct {
 		logger         *zap.SugaredLogger
 		config         *providers.Config
 		userRepo       repositories.User
 		accountService services.Account
+		echo           *echo.Echo
 	}
 
-	ApiOptions struct {
+	// Options represetns api options
+	Options struct {
 		fx.In
 
 		Logger         *zap.SugaredLogger
@@ -30,34 +33,41 @@ type (
 	}
 )
 
-func New(opts ApiOptions) {
-	a := &Api{
+// New creates new instance of API and inject it into fx.Lifecycle
+func New(opts Options) *API {
+	a := &API{
 		logger:         opts.Logger,
 		config:         opts.Config,
 		userRepo:       opts.UserRepo,
 		accountService: opts.AccountService,
+		echo:           echo.New(),
 	}
 
-	e := echo.New()
-	e.HidePort = true
-	e.HideBanner = true
+	a.echo.HidePort = true
+	a.echo.HideBanner = true
 
 	// Endpoint
-	e.POST("/register", a.Register)
-	e.POST("/sign-in", a.SignIn)
+	a.echo.POST("/register", a.Register)
+	a.echo.POST("/sign-in", a.SignIn)
 
-	e.GET("/profile", a.Profile, a.AuthMiddleware)
+	a.echo.GET("/profile", a.Profile, a.AuthMiddleware)
 
 	// Start & Stop server
 	opts.Lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			opts.Logger.Infof("starting server at: %s", opts.Config.ListenAddr)
-			go e.Start(opts.Config.ListenAddr)
+			go func() {
+				if err := a.echo.Start(opts.Config.ListenAddr); err != nil {
+					opts.Logger.Errorf("error starging server: %v", err)
+				}
+			}()
 
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			return e.Shutdown(ctx)
+			return a.echo.Shutdown(ctx)
 		},
 	})
+
+	return a
 }

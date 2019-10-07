@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/playneta/go-sessions/src/models"
+	"github.com/playneta/go-sessions/src/providers"
 	"github.com/playneta/go-sessions/src/repositories"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type (
@@ -21,12 +21,14 @@ type (
 		fx.In
 
 		Logger      *zap.SugaredLogger
+		Hasher      providers.Hasher
 		AccountRepo repositories.User
 	}
 
 	accountService struct {
 		accountRepo repositories.User
 		logger      *zap.SugaredLogger
+		hasher      providers.Hasher
 	}
 )
 
@@ -40,6 +42,7 @@ func NewAccount(opts AccountOptions) Account {
 	return &accountService{
 		logger:      opts.Logger.Named("account_service"),
 		accountRepo: opts.AccountRepo,
+		hasher:      opts.Hasher,
 	}
 }
 
@@ -52,7 +55,7 @@ func (a *accountService) Register(email, password string) (*models.User, error) 
 		return nil, ErrPasswordToSmall
 	}
 
-	hashedPassword, err := hashPassword(password)
+	hashedPassword, err := a.hasher.Hash(password)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +70,7 @@ func (a *accountService) Authorize(email, password string) (*models.User, error)
 		return nil, ErrUnauthorized
 	}
 
-	if !checkPasswordHash(password, user.Password) {
+	if !a.hasher.Compare(password, user.Password) {
 		a.logger.Debugf("password hash not match")
 		return nil, ErrUnauthorized
 	}
@@ -82,14 +85,4 @@ func (a *accountService) Authorize(email, password string) (*models.User, error)
 
 func generateToken() string {
 	return "secure_token"
-}
-
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
 }

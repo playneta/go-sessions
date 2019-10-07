@@ -1,6 +1,8 @@
 package providers
 
-import "github.com/go-pg/pg"
+import (
+	"github.com/go-pg/pg"
+)
 
 func NewDB(config *Config) (*pg.DB, error) {
 	conn := pg.Connect(&pg.Options{

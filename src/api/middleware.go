@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-func (a *Api) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (a *API) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		token := c.Request().Header.Get("X-TOKEN")
 

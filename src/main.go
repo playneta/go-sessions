@@ -8,12 +8,14 @@ import (
 	"go.uber.org/fx"
 )
 
+// Run starting main application running fx with providers and ivoke api.New
 func Run() {
 	app := fx.New(
 		fx.Provide(
 			providers.NewConfig,
 			providers.NewLogger,
 			providers.NewDB,
+			providers.NewBcryptHasher,
 			services.NewAccount,
 			repositories.NewUser,
 		),

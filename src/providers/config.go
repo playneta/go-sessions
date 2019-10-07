@@ -9,7 +9,16 @@ type Config struct {
 	DatabasePassword string
 	DatabaseName     string
 	ListenAddr       string
+	HashComplexity   int
 }
+
+var (
+	defaultDbUser         = "postgres"
+	defaultDbPassword     = "password"
+	defaultDbName         = "go_session"
+	defaultAddr           = ":9001"
+	defaultHashComplexity = 10
+)
 
 func NewConfig() (*Config, error) {
 	dbUser := os.Getenv("DB_USER")
@@ -18,19 +27,19 @@ func NewConfig() (*Config, error) {
 	addr := os.Getenv("ADDR")
 
 	if len(dbUser) == 0 {
-		dbUser = "postgres"
+		dbUser = defaultDbUser
 	}
 
 	if len(dbPassword) == 0 {
-		dbPassword = "password"
+		dbPassword = defaultDbPassword
 	}
 
 	if len(dbName) == 0 {
-		dbName = "go_session"
+		dbName = defaultDbName
 	}
 
 	if len(addr) == 0 {
-		addr = ":9001"
+		addr = defaultAddr
 	}
 
 	return &Config{
@@ -38,5 +47,6 @@ func NewConfig() (*Config, error) {
 		DatabasePassword: dbPassword,
 		DatabaseName:     dbName,
 		ListenAddr:       addr,
+		HashComplexity:   defaultHashComplexity,
 	}, nil
 }

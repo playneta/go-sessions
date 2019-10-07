@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-func (a *Api) SignIn(ctx echo.Context) error {
+func (a *API) SignIn(ctx echo.Context) error {
 	var req UserRequest
 	if err := ctx.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
