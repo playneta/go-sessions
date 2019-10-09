@@ -7,3 +7,5 @@ hash:
   complexity: 12
 api:
   addr: :9000
+ws:
+  addr: :9002

@@ -1,0 +1,74 @@
+<html>
+
+<head>
+    <title>Websocket Chat Testing</title>
+</head>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const chat = document.getElementById("chat");
+        const connectButton = document.getElementById("connect");
+        const sendButton = document.getElementById("send");
+        const to = document.getElementById("to");
+        const text = document.getElementById("text");
+        const token = document.getElementById("token");
+
+        connectButton.onclick = function () {
+            const ws = new WebSocket("ws://127.0.0.1:9002?token=" + token.value);
+
+            ws.onmessage = function (message) {
+                try {
+                    var msg = JSON.parse(message.data);
+
+                    var p = document.createElement("p")
+                    if (msg.to == "") {
+                        p.innerHTML += msg.from + ": ";
+                    } else {
+                        p.innerHTML += "<b>" + msg.from + " -> " + msg.to + "</b>: ";
+                    }
+                    p.innerHTML += "[" + msg.date_time + "]: " + msg.text;
+
+                    chat.appendChild(p);
+                } catch (e) {
+                    console.error(e);
+                }
+                // console.log('message', message);
+            }
+            ws.onerror = function (error) {
+                console.error(error);
+            }
+            ws.onopen = function () {
+                console.log("connected to webscoket");
+
+                sendButton.onclick = function () {
+                    var message = {
+                        to: to.value,
+                        text: text.value
+                    }
+
+                    console.log(message);
+                    ws.send(JSON.stringify(message));
+                }
+            }
+        }
+
+    })
+</script>
+
+
+<body>
+    <input id="token" type="text">
+    <button id="connect">Connect</button>
+    <br><br>
+    <div id="chat" style="width: 600px; height: 600px; background: #ccc; margin-bottom:10px;">
+
+    </div>
+    <div>
+        To: <input type="text" id="to">
+        Text: <input type="text" id="text">
+        <button id="send">Submit</button>
+    </div>
+</body>
+
+
+</html>

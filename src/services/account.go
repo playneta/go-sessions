@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/m1ome/randstr"
 	"github.com/playneta/go-sessions/src/models"
 	"github.com/playneta/go-sessions/src/providers"
 	"github.com/playneta/go-sessions/src/repositories"
@@ -84,5 +85,5 @@ func (a *accountService) Authorize(email, password string) (*models.User, error)
 }
 
 func generateToken() string {
-	return "secure_token"
+	return randstr.GetString(16)
 }

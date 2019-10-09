@@ -5,6 +5,7 @@ import (
 	"github.com/playneta/go-sessions/src/providers"
 	"github.com/playneta/go-sessions/src/repositories"
 	"github.com/playneta/go-sessions/src/services"
+	"github.com/playneta/go-sessions/src/ws"
 	"go.uber.org/fx"
 )
 
@@ -22,6 +23,7 @@ func Run() {
 
 		fx.Invoke(
 			api.New,
+			ws.New,
 		),
 	)
 
