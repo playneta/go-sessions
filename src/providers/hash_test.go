@@ -3,13 +3,15 @@ package providers
 import (
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBcryptHashHash(t *testing.T) {
-	hasher := NewBcryptHasher(&Config{
-		HashComplexity: 2,
-	})
+	v := viper.New()
+	v.Set("hash.complexity", 2)
+
+	hasher := NewBcryptHasher(v)
 
 	tests := []string{"123", "password", "new!"}
 	for _, test := range tests {

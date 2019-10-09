@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/labstack/echo"
-	"github.com/playneta/go-sessions/src/providers"
 	"github.com/playneta/go-sessions/src/repositories"
 	"github.com/playneta/go-sessions/src/services"
+	"github.com/spf13/viper"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -15,7 +15,7 @@ type (
 	// API structure represetns and handles api interaction
 	API struct {
 		logger         *zap.SugaredLogger
-		config         *providers.Config
+		config         *viper.Viper
 		userRepo       repositories.User
 		accountService services.Account
 		echo           *echo.Echo
@@ -26,7 +26,7 @@ type (
 		fx.In
 
 		Logger         *zap.SugaredLogger
-		Config         *providers.Config
+		Config         *viper.Viper
 		UserRepo       repositories.User
 		AccountService services.Account
 		Lc             fx.Lifecycle
@@ -55,9 +55,10 @@ func New(opts Options) *API {
 	// Start & Stop server
 	opts.Lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			opts.Logger.Infof("starting server at: %s", opts.Config.ListenAddr)
+			addr := opts.Config.GetString("api.addr")
+			opts.Logger.Infof("starting server at: %s", addr)
 			go func() {
-				if err := a.echo.Start(opts.Config.ListenAddr); err != nil {
+				if err := a.echo.Start(addr); err != nil {
 					opts.Logger.Errorf("error starging server: %v", err)
 				}
 			}()

@@ -28,9 +28,11 @@ type (
 )
 
 // NewBcryptHasher creates a new hasher that uses bcrypt under the hood
-func NewBcryptHasher(config *Config) Hasher {
+func NewBcryptHasher(config *viper.Viper) Hasher {
+	config.SetDefault("hash.complexity", 10)
+
 	return &BcryptHasher{
-		complexity: config.HashComplexity,
+		complexity: config.GetInt("hash.complexity"),
 	}
 }
 
