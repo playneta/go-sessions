@@ -11,8 +11,16 @@ gen:
 
 .PHONY: run
 run:
-	go run main.go
+	go run main.go serve
 
 .PHONY: run-web
 run-web:
 	cd web && npm run serve
+
+.PHONY: migarate-up
+migrate-up:
+	go run main.go migrate:up
+
+.PHONY: migrate-create
+migrate-create:
+	goose -dir ./migrations create $(NAME) sql
