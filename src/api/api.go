@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/playneta/go-sessions/src/repositories"
 	"github.com/playneta/go-sessions/src/services"
 	"github.com/spf13/viper"
@@ -45,6 +47,12 @@ func New(opts Options) *API {
 
 	a.echo.HidePort = true
 	a.echo.HideBanner = true
+
+	// CORS
+	a.echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodPost},
+	}))
 
 	// Endpoint
 	a.echo.POST("/register", a.Register)

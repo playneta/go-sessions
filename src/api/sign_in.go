@@ -14,7 +14,7 @@ func (a *API) SignIn(ctx echo.Context) error {
 
 	user, err := a.accountService.Authorize(req.Email, req.Password)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 	}
 
 	return ctx.JSON(200, user)

@@ -11,3 +11,7 @@ gen_mocks:
 .PHONY: run
 run:
 	go run main.go
+
+.PHONY: run-web
+run-web:
+	cd web && npm run serve
