@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/playneta/go-sessions/src/models"
 	"github.com/playneta/go-sessions/src/repositories"
+	"github.com/playneta/go-sessions/src/services"
 	"github.com/spf13/viper"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -16,13 +16,13 @@ import (
 
 type (
 	Websocket struct {
-		logger   *zap.SugaredLogger
-		config   *viper.Viper
-		userRepo repositories.User
+		logger         *zap.SugaredLogger
+		config         *viper.Viper
+		userRepo       repositories.User
+		accountService services.Account
 
-		history []Message
-		hub     map[string]User
-		hmu     sync.RWMutex
+		hub map[string]User
+		hmu sync.RWMutex
 	}
 
 	User struct {
@@ -33,10 +33,11 @@ type (
 	Options struct {
 		fx.In
 
-		Logger   *zap.SugaredLogger
-		Config   *viper.Viper
-		Lc       fx.Lifecycle
-		UserRepo repositories.User
+		Logger         *zap.SugaredLogger
+		Config         *viper.Viper
+		Lc             fx.Lifecycle
+		UserRepo       repositories.User
+		AccountService services.Account
 	}
 )
 
@@ -50,10 +51,11 @@ var (
 
 func New(opts Options) {
 	socket := &Websocket{
-		logger:   opts.Logger,
-		config:   opts.Config,
-		userRepo: opts.UserRepo,
-		hub:      make(map[string]User),
+		logger:         opts.Logger,
+		config:         opts.Config,
+		userRepo:       opts.UserRepo,
+		accountService: opts.AccountService,
+		hub:            make(map[string]User),
 	}
 
 	opts.Lc.Append(fx.Hook{
@@ -102,16 +104,35 @@ func (s *Websocket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Sending history to user
 	s.logger.Info("sending history to user")
-	for _, message := range s.history {
-		if err := c.WriteJSON(message); err != nil {
+	messages, err := s.accountService.History(*user)
+	if err != nil {
+		s.logger.Errorf("error getting history: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	for _, message := range messages {
+		if err := c.WriteJSON(NewMessageEvent(message)); err != nil {
 			s.logger.Errorf("error sending history: %v", err)
+		}
+	}
+
+	// Sending all message of user join
+	for _, user := range s.hub {
+		if err := user.Conn.WriteJSON(Event{
+			Type: "join",
+			Data: MessageJoin{
+				User: user.Model.Email,
+			},
+		}); err != nil {
+			s.logger.Error("error sending join message: %v", err)
+			continue
 		}
 	}
 
 	// Message handling
 	s.logger.Info("start listening for incoming messages")
 	for {
-		var msg Message
+		var msg MessageEvent
 		if err := c.ReadJSON(&msg); err != nil {
 			s.logger.Errorf("error reading message: %v", err)
 			return
@@ -119,11 +140,16 @@ func (s *Websocket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		s.logger.Infof("got incoming message: %v", msg)
 
-		msg.From = user.Email
-		msg.DateTime = time.Now()
-		if msg.To != "" {
+		// Creating message and saving it
+		message, err := s.accountService.CreateMessage(*user, msg.To, msg.Text)
+		if err != nil {
+			s.logger.Errorf("error saving message: %v", err)
+			continue
+		}
+
+		if message.Receiver != nil {
 			s.hmu.RLock()
-			userTo, ok := s.hub[msg.To]
+			userTo, ok := s.hub[message.Receiver.Email]
 			s.hmu.RUnlock()
 
 			if !ok {
@@ -131,24 +157,21 @@ func (s *Websocket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			msg.To = userTo.Model.Email
-
-			if err := c.WriteJSON(msg); err != nil {
+			if err := c.WriteJSON(NewMessageEvent(*message)); err != nil {
 				s.logger.Errorf("error sending message: %v", err)
 			}
 
-			if err := userTo.Conn.WriteJSON(msg); err != nil {
+			if err := userTo.Conn.WriteJSON(NewMessageEvent(*message)); err != nil {
 				s.logger.Errorf("error sending message: %v", err)
 			}
 		} else {
 			s.hmu.RLock()
 			for _, user := range s.hub {
-				if err := user.Conn.WriteJSON(msg); err != nil {
+				if err := user.Conn.WriteJSON(NewMessageEvent(*message)); err != nil {
 					s.logger.Error("error sending message: %v", err)
 					continue
 				}
 			}
-			s.history = append(s.history, msg)
 			s.hmu.RUnlock()
 		}
 	}

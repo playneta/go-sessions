@@ -58,3 +58,29 @@ func (m *MockAccount) Authorize(email, password string) (*models.User, error) {
 func (mr *MockAccountMockRecorder) Authorize(email, password interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authorize", reflect.TypeOf((*MockAccount)(nil).Authorize), email, password)
 }
+
+// CreateMessage mocks base method
+func (m *MockAccount) CreateMessage(user models.User, receiverEmail, text string) (*models.Message, error) {
+	ret := m.ctrl.Call(m, "CreateMessage", user, receiverEmail, text)
+	ret0, _ := ret[0].(*models.Message)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateMessage indicates an expected call of CreateMessage
+func (mr *MockAccountMockRecorder) CreateMessage(user, receiverEmail, text interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateMessage", reflect.TypeOf((*MockAccount)(nil).CreateMessage), user, receiverEmail, text)
+}
+
+// History mocks base method
+func (m *MockAccount) History(user models.User) ([]models.Message, error) {
+	ret := m.ctrl.Call(m, "History", user)
+	ret0, _ := ret[0].([]models.Message)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// History indicates an expected call of History
+func (mr *MockAccountMockRecorder) History(user interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "History", reflect.TypeOf((*MockAccount)(nil).History), user)
+}

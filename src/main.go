@@ -19,6 +19,7 @@ func Run() {
 			providers.NewBcryptHasher,
 			services.NewAccount,
 			repositories.NewUser,
+			repositories.NewMessage,
 		),
 
 		fx.Invoke(

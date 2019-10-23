@@ -62,7 +62,15 @@ export default {
 
     ws.onmessage = message => {
       try {
-        this.messages.push(JSON.parse(message.data));
+        const decodedMessage = JSON.parse(message.data);
+
+        switch (decodedMessage.type) {
+          case "message":
+            this.messages.push(decodedMessage.data);
+        }
+
+        // eslint-disable-next-line no-console
+        console.log(JSON.parse(message.data));
       } catch (e) {
         this.error = e;
       }
